@@ -1,0 +1,104 @@
+version: "3.9"
+
+services:
+
+  # ----------------------------
+  # Temporal Server
+  # ----------------------------
+  temporal:
+    image: temporalio/auto-setup:latest
+    container_name: olo-temporal
+    environment:
+      - DB=sqlite
+    ports:
+      - "7233:7233"
+    networks:
+      - olo-net
+
+  # ----------------------------
+  # Temporal UI
+  # ----------------------------
+  temporal-ui:
+    image: temporalio/ui:latest
+    container_name: olo-temporal-ui
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+    ports:
+      - "8233:8233"
+    depends_on:
+      - temporal
+    networks:
+      - olo-net
+
+  # ----------------------------
+  # Vector Database (Qdrant)
+  # ----------------------------
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: olo-qdrant
+    ports:
+      - "6333:6333"
+    networks:
+      - olo-net
+
+  # ----------------------------
+  # Ollama (LLM Runtime)
+  # ----------------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: olo-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - olo-net
+
+  # ----------------------------
+  # Control Plane (Spring Boot)
+  # ----------------------------
+#  control-plane:
+#    build:
+      #context: ./control-plane
+     # dockerfile: Dockerfile
+    #container_name: olo-control
+   # environment:
+  #    - TEMPORAL_ADDRESS=temporal:7233
+ #     - QDRANT_URL=http://qdrant:6333
+#      - OLLAMA_URL=http://ollama:11434
+    #ports:
+    #  - "8080:8080"
+   # depends_on:
+  #    - temporal
+ #     - qdrant
+    #  - ollama
+   # networks:
+  #    - olo-net
+
+  # ----------------------------
+  # React UI
+  # ----------------------------
+  #ui:
+  #  image: ghcr.io/your-org/open-llm-orchestrator-ui:latest
+  #  container_name: olo-ui
+  #  environment:
+  #    - VITE_API_BASE_URL=http://control-plane:8080
+  #  ports:
+  #    - "3000:3000"
+  #  depends_on:
+  #    - control-plane
+  #  networks:
+  #    - olo-net
+
+# ----------------------------
+# Network
+# ----------------------------
+networks:
+  olo-net:
+    driver: bridge
+
+# ----------------------------
+# Volumes
+# ----------------------------
+volumes:
+  ollama_data:
