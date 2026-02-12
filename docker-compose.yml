@@ -1,58 +1,101 @@
-version: "3.9"
-
 services:
-
-  # ----------------------------
-  # Temporal Server
-  # ----------------------------
-  temporal:
-    image: temporalio/auto-setup:latest
-    container_name: olo-temporal
+  olo-postgres:
+    image: postgres:15
+    container_name: olo-postgres
     environment:
-      - DB=sqlite
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: pgpass
+      POSTGRES_DB: temporal
+    ports:
+      - "5432:5432"
+    networks:
+      - olo-net
+    restart: unless-stopped
+      
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTICSEARCH_VERSION:-7.17.23}
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - cluster.routing.allocation.disk.threshold_enabled=true
+      - cluster.routing.allocation.disk.watermark.low=512mb
+      - cluster.routing.allocation.disk.watermark.high=256mb
+      - cluster.routing.allocation.disk.watermark.flood_stage=128mb
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - olo-net
+    restart: unless-stopped
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:${ELASTICSEARCH_VERSION:-7.17.23}
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_NAME=kibana
+      - SERVER_PUBLICBASEURL=http://localhost:5601
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - olo-net
+    restart: unless-stopped
+  temporal:
+    container_name: temporal
+    image: temporalio/auto-setup:${TEMPORAL_VERSION:-1.22.4}
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=pgpass
+      - POSTGRES_SEEDS=olo-postgres
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+      - ENABLE_ES=true
+      - ES_SEEDS=elasticsearch
+      - ES_VERSION=v7
+      - PROMETHEUS_ENDPOINT=0.0.0.0:8000
     ports:
       - "7233:7233"
+      - "8001:8000"
+    volumes:
+      - ./dynamicconfig:/etc/temporal/config/dynamicconfig
     networks:
       - olo-net
+    restart: unless-stopped
 
-  # ----------------------------
-  # Temporal UI
-  # ----------------------------
-  temporal-ui:
-    image: temporalio/ui:latest
-    container_name: olo-temporal-ui
-    environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-    ports:
-      - "8233:8233"
+  temporal-admin-tools:
+    container_name: temporal-admin-tools
+    image: temporalio/admin-tools:${TEMPORAL_ADMINTOOLS_VERSION:-1.22.4}
     depends_on:
       - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+    stdin_open: true
+    tty: true
     networks:
       - olo-net
+    restart: unless-stopped
 
-  # ----------------------------
-  # Vector Database (Qdrant)
-  # ----------------------------
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: olo-qdrant
+  temporal-ui:
+    container_name: temporal-ui
+    image: temporalio/ui:${TEMPORAL_UI_VERSION:-2.22.2}
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
     ports:
-      - "6333:6333"
+      - "8092:8080"
     networks:
       - olo-net
+    restart: unless-stopped
 
-  # ----------------------------
-  # Ollama (LLM Runtime)
-  # ----------------------------
-  ollama:
-    image: ollama/ollama:latest
-    container_name: olo-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    networks:
-      - olo-net
 
   # ----------------------------
   # Control Plane (Spring Boot)
@@ -102,3 +145,4 @@ networks:
 # ----------------------------
 volumes:
   ollama_data:
+  elasticsearch-data:
