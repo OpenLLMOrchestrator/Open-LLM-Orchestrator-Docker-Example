@@ -61,7 +61,7 @@ services:
       - PROMETHEUS_ENDPOINT=0.0.0.0:8000
     ports:
       - "7233:7233"
-      - "8001:8000"
+      - "8000:8000"
     volumes:
       - ./dynamicconfig:/etc/temporal/config/dynamicconfig
     networks:
@@ -91,7 +91,7 @@ services:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_CORS_ORIGINS=http://localhost:3000
     ports:
-      - "8092:8080"
+      - "8080:8080"
     networks:
       - olo-net
     restart: unless-stopped
