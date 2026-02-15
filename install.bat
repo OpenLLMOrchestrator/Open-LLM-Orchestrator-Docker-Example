@@ -49,4 +49,10 @@ echo.
 
 call "%~dp0scripts\start.bat"
 
+echo.
+echo ------------------------------------------------------------
+echo Ensuring Temporal UI columns (pipelineName, operation, tenantId, userId)...
+echo ------------------------------------------------------------
+call "%~dp0scripts\add-temporal-search-attributes.bat" nopause
+
 exit /b 0

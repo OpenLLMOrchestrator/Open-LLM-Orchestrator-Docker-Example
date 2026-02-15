@@ -94,7 +94,7 @@ If both commands work, Docker is installed and running.
    - **Option B (ZIP):**  
      Download the ZIP, extract it, and open a terminal in the extracted folder (e.g. `Open-LLM-Orchestrator-Docker-Example`).
 
-2. Confirm you are in the **project root** (you should see `docker-compose.yml`, `install.bat`, and a `scripts` folder).
+2. Confirm you are in the **project root** (you should see `docker-compose.yml`, `install.bat`, `install.sh`, and a `scripts` folder).
 
 ---
 
@@ -124,11 +124,11 @@ The first run can take **several minutes** (downloading images and models). Late
 From the project root:
 
 ```bash
-chmod +x scripts/start.sh
-./scripts/start.sh
+chmod +x install.sh scripts/start.sh scripts/add-temporal-search-attributes.sh
+./install.sh
 ```
 
-Or run the same steps manually (see README).
+Or run `./scripts/start.sh` only (same as install, but without the Docker checks and Temporal column script).
 
 ---
 
@@ -168,7 +168,7 @@ If these URLs load, the stack is running correctly.
 
 - **Start again (after reboot or stop):**  
   - **Windows:** Double-click **`install.bat`** or run **`scripts\start.bat`**.  
-  - **Linux/macOS:** Run **`./scripts/start.sh`**.  
+  - **Linux/macOS:** Run **`./install.sh`** or **`./scripts/start.sh`**.  
   Models already downloaded will be skipped.
 
 - **Stop the stack:**  
@@ -242,8 +242,8 @@ Warning: `-v` deletes data (including downloaded models). You will need to downl
 
 | Action | Windows | Linux / macOS |
 |--------|---------|----------------|
-| First-time setup | `install.bat` | `./scripts/start.sh` |
-| Start stack | `scripts\start.bat` or `install.bat` | `./scripts/start.sh` |
+| First-time setup | `install.bat` | `./install.sh` |
+| Start stack | `scripts\start.bat` or `install.bat` | `./scripts/start.sh` or `./install.sh` |
 | Stop stack | `scripts\stop.bat` | `./scripts/stop.sh` |
 | List Ollama models | http://localhost:11434/api/tags or `docker exec olo-ollama ollama list` | Same |
 

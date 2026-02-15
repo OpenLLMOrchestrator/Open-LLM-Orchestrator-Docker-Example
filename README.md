@@ -12,7 +12,7 @@ Ready-to-run Docker Compose setup for **Open LLM Orchestrator**, suitable for **
 - Starts the stack and downloads multiple default OSS models (Mistral, Llama 3.2, Phi-3, Gemma 2, Qwen2) on first run.
 - See **[SETUP.md](SETUP.md)** for full step-by-step instructions.
 
-**Linux / macOS:** From the project root run `./scripts/start.sh`.
+**Linux / macOS:** From the project root run `./install.sh` (or `./scripts/start.sh`).
 
 ---
 
@@ -101,3 +101,20 @@ curl -s -X POST http://localhost:4000/chat/completions \
 ```
 
 Use base URL **http://localhost:4000** with any OpenAI-compatible client (SDK, LangChain, etc.); `api_key` can be omitted or set to any value.
+
+---
+
+## Temporal UI – Workflow table columns
+
+To show **pipelineName**, **operation**, **tenantId**, and **userId** in the Temporal UI workflow table:
+
+1. **Register the custom search attributes** (run once after the stack is up):
+   ```bash
+   # Windows
+   scripts\add-temporal-search-attributes.bat
+   # Linux / macOS
+   ./scripts/add-temporal-search-attributes.sh
+   ```
+2. In **Temporal UI** (http://localhost:8080): open **Workflows** → click **Configure Workflow Table** (gear/columns) → enable **pipelineName**, **operation**, **tenantId**, **userId**.
+
+Your workflows must set these when starting (e.g. via searchable attributes in the workflow start options) for values to appear in the table.
