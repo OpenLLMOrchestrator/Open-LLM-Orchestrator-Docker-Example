@@ -128,6 +128,14 @@ services:
     networks:
       - olo-net
     restart: unless-stopped
+    # GPU: requires NVIDIA driver + nvidia-container-toolkit. Remove deploy block to run on CPU only.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   # ----------------------------
   # OpenAI OSS (LiteLLM proxy – OpenAI-compatible API over Ollama)
@@ -145,6 +153,13 @@ services:
     networks:
       - olo-net
     restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
   # ----------------------------
   # Redis + Redis Insight
@@ -173,6 +188,53 @@ services:
     networks:
       - olo-net
     restart: unless-stopped
+
+  # ----------------------------
+  # Open LLM Orchestrator Worker (Temporal worker: runs CoreWorkflow, etc.)
+  # ----------------------------
+  open-llm-orchestrator-worker:
+    image: openllmorchestrator/open-llm-orchestrator-worker:${WORKER_IMAGE_TAG:-latest}
+    container_name: olo-worker
+    restart: unless-stopped
+    depends_on:
+      - temporal
+      - ollama
+      - qdrant
+      - redis
+    networks:
+      - olo-net
+    environment:
+      # Temporal (worker expects TEMPORAL_TARGET; some clients use TEMPORAL_ADDRESS)
+      TEMPORAL_TARGET: ${TEMPORAL_TARGET:-temporal:7233}
+      TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-temporal:7233}
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+      QUEUE_NAME: ${QUEUE_NAME:-core-task-queue}
+      # Config loading (Redis → DB → file)
+      CONFIG_KEY: ${CONFIG_KEY:-default}
+      CONFIG_VERSION: ${CONFIG_VERSION:-1.0}
+      CONFIG_RETRY_SLEEP_SECONDS: ${CONFIG_RETRY_SLEEP_SECONDS:-30}
+      # Redis (config storage / cache)
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # Database (config storage; create DB olo_config on postgres if used)
+      DB_URL: ${WORKER_DB_URL:-jdbc:postgresql://olo-postgres:5432/olo_config}
+      DB_USERNAME: ${WORKER_DB_USERNAME:-temporal}
+      DB_PASSWORD: ${WORKER_DB_PASSWORD:-pgpass}
+      # Worker tuning
+      MAX_CONCURRENT_WORKFLOW_TASK_POLLERS: ${MAX_CONCURRENT_WORKFLOW_TASK_POLLERS:-5}
+      MAX_CONCURRENT_ACTIVITY_TASK_POLLERS: ${MAX_CONCURRENT_ACTIVITY_TASK_POLLERS:-10}
+      # Ollama (LLM pipelines)
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:latest}
+      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-300}
+      # OpenAI-compatible API (LiteLLM) and Qdrant
+      OPENAI_API_BASE: ${OPENAI_API_BASE:-http://openai-oss:4000}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+    env_file:
+      - .env
 
   olo-ui:
     image: openllmorchestrator/open-llm-orchestrator-ui:latest
@@ -228,41 +290,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ----------------------------
-  # Control Plane (Spring Boot)
-  # ----------------------------
-#  control-plane:
-#    build:
-      #context: ./control-plane
-     # dockerfile: Dockerfile
-    #container_name: olo-control
-   # environment:
-  #    - TEMPORAL_ADDRESS=temporal:7233
- #     - QDRANT_URL=http://qdrant:6333
-#      - OLLAMA_URL=http://ollama:11434
-    #ports:
-    #  - "8080:8080"
-   # depends_on:
-  #    - temporal
- #     - qdrant
-    #  - ollama
-   # networks:
-  #    - olo-net
-
-  # ----------------------------
-  # React UI
-  # ----------------------------
-  #ui:
-  #  image: ghcr.io/your-org/open-llm-orchestrator-ui:latest
-  #  container_name: olo-ui
-  #  environment:
-  #    - VITE_API_BASE_URL=http://control-plane:8080
-  #  ports:
-  #    - "3000:3000"
-  #  depends_on:
-  #    - control-plane
-  #  networks:
-  #    - olo-net
 
 # ----------------------------
 # Network

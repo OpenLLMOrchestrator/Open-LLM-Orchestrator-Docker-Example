@@ -27,11 +27,17 @@ Ready-to-run Docker Compose setup for **Open LLM Orchestrator**, suitable for **
 | Redis Insight    | Redis GUI & CLI       |
 | Ollama           | OSS LLM runtime       |
 | **OpenAI OSS**   | OpenAI-compatible API (LiteLLM → Ollama) |
+| **Open LLM Orchestrator Worker** | Temporal worker (runs CoreWorkflow, chat, doc ingestion) |
+| **olo-ui**       | Chat UI (Open LLM Orchestrator UI)        |
 | PostgreSQL       | Temporal DB          |
 | Elasticsearch    | Search / indexing    |
 | Kibana           | Elasticsearch UI     |
 
-*(Control Plane and Chat UI are optional; uncomment in `docker-compose.yml` when needed.)*
+*(Worker and UI are part of the stack; Control Plane is optional.)*
+
+**GPU:** The **ollama** and **openai-oss** services are configured to use one NVIDIA GPU. You need the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed. To run on CPU only, remove the `deploy.resources.reservations.devices` block from those services in `docker-compose.yml`.
+
+**Worker:** The Open LLM Orchestrator Worker reads its config from Redis → DB → file. For DB config storage, create the `olo_config` database once (after postgres is up): run `scripts\create-olo-config-db.bat` or `./scripts/create-olo-config-db.sh`. Worker env vars (TEMPORAL_TARGET, QUEUE_NAME, CONFIG_KEY, REDIS_*, DB_*, OLLAMA_*, etc.) are in `.env` and wired in `docker-compose.yml` for the stack.
 
 ---
 
