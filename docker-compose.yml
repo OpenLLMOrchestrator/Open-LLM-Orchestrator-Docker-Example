@@ -241,8 +241,8 @@ services:
     container_name: olo-ui
     restart: unless-stopped
     ports:
-      - "${PORT-BACKEND:-8002}:8002"
-      - "${PORT-UI:-5173}:5173"
+      - "${PORT_BACKEND:-8002}:8002"
+      - "${PORT_UI:-5173}:5173"
     networks:
       - olo-net
     environment:

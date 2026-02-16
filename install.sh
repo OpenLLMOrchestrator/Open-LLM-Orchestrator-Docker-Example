@@ -42,6 +42,12 @@ echo "Docker is running."
 echo ""
 
 echo "------------------------------------------------------------"
+echo "Checking for updated images (Docker Hub)..."
+echo "------------------------------------------------------------"
+docker compose pull --ignore-pull-failures
+echo ""
+
+echo "------------------------------------------------------------"
 echo "Starting the stack and downloading OSS models..."
 echo "This may take several minutes on first run."
 echo "------------------------------------------------------------"
