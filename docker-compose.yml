@@ -235,6 +235,8 @@ services:
       QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
     env_file:
       - .env
+    volumes:
+      - ${WORKER_SHARED_VOLUME:-./shared}:/app/shared
 
   olo-ui:
     image: openllmorchestrator/open-llm-orchestrator-ui:latest
