@@ -35,4 +35,4 @@ echo 🌐 Chat UI      : http://localhost:3000
 echo 🧠 Temporal UI  : http://localhost:8080
 echo 🧠 Ollama/Models: http://localhost:11434/api/tags
 echo ⚙️  Control API : http://localhost:8080
-pause
+

@@ -35,6 +35,8 @@ Ready-to-run Docker Compose setup for **Open LLM Orchestrator**, suitable for **
 
 *(Worker and UI are part of the stack; Control Plane is optional.)*
 
+**Image generation (Stable Diffusion, ComfyUI, InvokeAI):** Started with the rest of the stack. Stable Diffusion and ComfyUI use Docker Hub images (`aidockorg/...`); InvokeAI uses GHCR and may require `docker login ghcr.io` if pulls are denied.
+
 **GPU:** The **ollama** and **openai-oss** services are configured to use one NVIDIA GPU. You need the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed. To run on CPU only, remove the `deploy.resources.reservations.devices` block from those services in `docker-compose.yml`.
 
 **Worker:** The Open LLM Orchestrator Worker reads its config from Redis → DB → file. For DB config storage, create the `olo_config` database once (after postgres is up): run `scripts\create-olo-config-db.bat` or `./scripts/create-olo-config-db.sh`. Worker env vars (TEMPORAL_TARGET, QUEUE_NAME, CONFIG_KEY, REDIS_*, DB_*, OLLAMA_*, etc.) are in `.env` and wired in `docker-compose.yml` for the stack.

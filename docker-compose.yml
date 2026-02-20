@@ -291,7 +291,105 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ----------------------------------------
+  # 1. Stable Diffusion (Automatic1111)
+  # ----------------------------------------
+  stable-diffusion:
+    image: aidockorg/stable-diffusion-webui-cuda:latest
+    container_name: stable-diffusion
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./workspace-stable-diffusion:/workspace
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - WEBUI_ARGS=--xformers --api
+      - WEB_ENABLE_AUTH=false
+    restart: unless-stopped
+    networks:
+      - olo-net
 
+  # ----------------------------------------
+  # 2. ComfyUI
+  # ----------------------------------------
+  comfyui:
+    image: aidockorg/comfyui-cuda:latest
+    container_name: comfyui
+    ports:
+      - "8188:8188"
+    volumes:
+      - ./workspace-comfyui:/workspace
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - WEB_ENABLE_AUTH=false
+    restart: unless-stopped
+    networks:
+      - olo-net
+
+  # ----------------------------------------
+  # 3. InvokeAI
+  # ----------------------------------------
+  invokeai:
+    image: ghcr.io/invoke-ai/invokeai:latest
+    container_name: invokeai
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./models/invokeai:/invokeai
+      - ./outputs/invokeai:/invokeai/outputs
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    restart: unless-stopped
+    networks:
+      - olo-net
+  olo-config:
+    image: openllmorchestrator/olo-config:latest
+    container_name: olo-config
+    depends_on:
+      - olo-postgres
+      - redis
+    networks:
+      - olo-net
+    ports:
+      - "${SERVER_PORT:-8082}:8082"
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      SPRING_DATASOURCE_URL: jdbc:postgresql://${POSTGRES_HOST:-olo-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-temporal}
+      SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-temporal}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pgpass}
+      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-redis}
+      SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
+      SPRING_DATA_REDIS_PASSWORD: ${SPRING_DATA_REDIS_PASSWORD:-}
+      OLO_TEMPLATES_DIR: ${OLO_TEMPLATES_DIR:-/app/template}
+      OLO_COMPONENTS_DIR: ${OLO_COMPONENTS_DIR:-/app/components}
+      OLO_PLUGINS_DIR: ${OLO_PLUGINS_DIR:-/app/components/plugins}
+      OLO_REDIS_CONFIG_KEY_PREFIX: ${OLO_REDIS_CONFIG_KEY_PREFIX:-olo:config:}
+      OLO_REDIS_ENGINE_CONFIG_KEY_PREFIX: ${OLO_REDIS_ENGINE_CONFIG_KEY_PREFIX:-olo:engine:config:}
+      OLO_REDIS_ENABLED: ${OLO_REDIS_ENABLED:-true}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+    volumes:
+      - ./template:/app/template:ro
+      - ./components:/app/components:ro
+    restart: unless-stopped
 # ----------------------------
 # Network
 # ----------------------------
